@@ -305,7 +305,7 @@ export default function App() {
           </section>
 
           <section className='py-20 px-6 text-center bg-gradient-to-b from-pink-400 to-purple-600 text-white'>
-            <h2 className='text-3xl mb-6'>RSVP</h2>
+            <h2 className='text-3xl mb-6'>Приглашаем вас</h2>
             <form onSubmit={handleRSVP} className='flex flex-col items-center gap-4'>
               <input type="text" required placeholder='Ваше имя'
                 value={guest_name} onChange={(e) => setGuestName(e.target.value)}
