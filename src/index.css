@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@keyframes fall {
+    0% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(100vh);
+    }
+}
+
+html {
+    scroll-behavior: smooth;
+}
