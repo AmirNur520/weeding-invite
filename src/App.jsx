@@ -28,7 +28,7 @@ export default function App() {
   const weeding_date = new Date("2026-06-16")
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 2000)
+    setTimeout(() => setLoading(false), 3000)
   }, [])
 
   useEffect(() => {
@@ -126,7 +126,6 @@ export default function App() {
 
     const TOKEN = import.meta.env.VITE_TG_TOKEN
     const CHAT_ID = import.meta.env.VITE_CHAT_ID
-
     const text = `
     💍 Новый гость!
     👤 Имя: ${guest_name}
