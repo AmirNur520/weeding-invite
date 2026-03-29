@@ -51,12 +51,13 @@ export default function App() {
   }, [music_on])
 
   useEffect(() => {
+    if (fullscreen) return
     const interval = setInterval(() => {
       setCurrent(prev => (prev + 1) % images.length)
     }, 4000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [fullscreen])
 
   useEffect(() => {
     if (!opened) return
