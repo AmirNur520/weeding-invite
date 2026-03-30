@@ -11,8 +11,10 @@ export default function App() {
   const [guests, setGuests] = useState([])
   const [loading, setLoading] = useState(true)
   const [success, setSuccess] = useState(false)
+  const [show_doors, setShowDoors] = useState(true)
   const [fullscreen, setFullScreen] = useState(null)
   const audio_ref = useRef(null)
+  const door_sound = useRef(null)
   const canvas_ref = useRef(null)
   const [current, setCurrent] = useState(0)
   const [attendance, setAttendance] = useState("Приду")
@@ -71,7 +73,7 @@ export default function App() {
     let width = canvas.width = window.innerWidth
     let height = canvas.height = window.innerHeight
 
-    const petals = Array.from({ length: 30 }).map(() => ({
+    const petals = Array.from({ length: 60 }).map(() => ({
       x: Math.random() * width,
       y: Math.random() * height,
       r: Math.random() * 6 + 2,
@@ -97,7 +99,7 @@ export default function App() {
 
         ctx.restore()
 
-        p.y += p.d + 0.7
+        p.y += p.d + 1.2
         p.x += Math.sin(p.y * 0.02)
         p.angle += 0.01
 
@@ -119,7 +121,13 @@ export default function App() {
 
   const handleOpen = () => {
     setOpened(true)
+
+    setTimeout(() => {
+      setShowDoors(false)
+    }, 1500)
+
     audio_ref.current?.play()
+    door_sound.current?.play()
   }
 
   const handleRSVP = async (e) => {
@@ -173,6 +181,7 @@ export default function App() {
         </div>
       )}
 
+      <audio ref={door_sound} src='/door.mp3'></audio>
       <audio ref={audio_ref} loop>
         <source src="/music.mp3" type="audio/mpeg" />
       </audio>
@@ -201,6 +210,29 @@ export default function App() {
 
       {opened && (
         <>
+        {show_doors && (
+          <div className='fixed inset-0 z-[999] flex'>
+
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <motion.div initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }} 
+              transition={{ duration: 1 }}
+              className='w-full h-full bg-gradient-to-r from-pink-500 via-purple-500 to-yellow-400 blur-3xl opacity-70'/>
+            </div>
+
+            <motion.div initial={{ x: 0 }}
+             animate={{ x: "-100%" }}
+             transition={{ duration: 1.5, ease: "easeInOut" }}
+             className='w-1/2 h-full bg-gradient-to-r from-black to-gray-800'
+             />
+
+             <motion.div initial={{ x: 0 }}
+             animate={{ x: "100%" }}
+             transition={{ duration: 1.5, ease: "easeInOut" }}
+             className='w-1/2 h-full bg-gradient-to-r from-black to-gray-800'
+             />
+          </div>
+        )}
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -253,6 +285,36 @@ export default function App() {
             </motion.h2>
           </motion.section>
 
+          <motion.section
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+            className='py-20 text-center'
+          >
+            <h2 className='text-3xl text-yellow-400 mb-10'>Программа дня</h2>
+
+            <div className='max-w-md mx-auto space-y-6 text-lg'>
+              <div className='flex justify-between border-b border-gray-600 pb-2'>
+                <span>17:00</span>
+                <span>Сбор гостей</span>
+              </div>
+
+              <div className='flex justify-between border-b border-gray-600 pb-2'>
+                <span>18:00</span>
+                <span>Церемония</span>
+              </div>
+
+              <div className='flex justify-between border-b border-gray-600 pb-2'>
+                <span>19:00</span>
+                <span>Банкет</span>
+              </div>
+
+              <div className='flex justify-between'>
+                <span>20:00</span>
+                <span>Танцы и развлечения 🎉</span>
+              </div>
+            </div>
+          </motion.section>
 
           <motion.section
             initial={{ opacity: 0, y: 50 }}
@@ -360,6 +422,22 @@ export default function App() {
             </a>
           </motion.section>
 
+          <motion.section initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+            className='py-20 text-center bg-black text-white'>
+            <h2 className='text-3xl text-yellow-400 mb-6'>Дресс-код</h2>
+            <p className='max-w-xl mx-auto mb-6 text-lg'>
+              Мы будем рады видеть вас в элегантных нарядах в темных и пастельных тонах 🤍
+            </p>
+            <div className='flex justify-center gap-4 flex-wrap'>
+              {["#f5e6e8", "#0f2076", "#2f2f2e", "#d6f5e8", "#f0f0f0"].map((color, i) => (
+                <div key={i}
+                  className='w-12 h-12 rounded-full border-2 border-white' style={{ backgroundColor: color }} />
+              ))}
+            </div>
+          </motion.section>
+
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -408,6 +486,11 @@ export default function App() {
 
             </div>
           )}
+
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className='fixed bottom-6 right-6 bg-white font-bold text-black px-4 py-2 rounded-full shadow-lg hover:scale-110 transition cursor-pointer z-50'>
+            ↑
+          </button>
 
         </>
       )}
