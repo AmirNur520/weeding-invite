@@ -122,12 +122,16 @@ export default function App() {
   const handleOpen = () => {
     setOpened(true)
 
+    door_sound.current?.play()
+    
     setTimeout(() => {
       setShowDoors(false)
     }, 1500)
 
-    audio_ref.current?.play()
-    door_sound.current?.play()
+    setTimeout(() => {
+      audio_ref.current?.play()
+
+    }, 1200)
   }
 
   const handleRSVP = async (e) => {
@@ -201,7 +205,7 @@ export default function App() {
             onClick={handleOpen}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className='w-full max-w-xs mx-auto text-2xl md:text-3xl border border-white px-8 py-3 rounded-full hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] hover:bg-white hover:text-pink-500 active:scale-90 transition-all duration-300 ease-in-out cursor-pointer'
+            className='w-full max-w-xs mx-auto text-2xl md:text-3xl border animate-pulse border-white px-8 py-3 rounded-full hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] hover:bg-white hover:text-pink-500 active:scale-90 transition-all duration-300 ease-in-out cursor-pointer'
           >
             Открыть
           </motion.button>
@@ -216,7 +220,7 @@ export default function App() {
             <div className='absolute inset-0 flex items-center justify-center'>
               <motion.div initial={{ opacity: 0 }}
               animate={{ opacity: 1 }} 
-              transition={{ duration: 1 }}
+              transition={{ duration: 2 }}
               className='w-full h-full bg-gradient-to-r from-pink-500 via-purple-500 to-yellow-400 blur-3xl opacity-70'/>
             </div>
 
