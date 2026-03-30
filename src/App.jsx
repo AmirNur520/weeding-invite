@@ -297,7 +297,7 @@ export default function App() {
           >
             <h2 className='text-3xl text-yellow-400 mb-10'>Программа дня</h2>
 
-            <div className='max-w-md mx-auto space-y-6 text-lg'>
+            <div className='max-w-md mx-auto space-y-6 p-5 text-lg'>
               <div className='flex justify-between border-b border-gray-600 pb-2'>
                 <span>17:00</span>
                 <span>Сбор гостей</span>
@@ -464,7 +464,7 @@ export default function App() {
                 src={images[current]}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain p-4"
               />
 
               <button
