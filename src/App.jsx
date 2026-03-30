@@ -48,8 +48,14 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (music_on) audio_ref.current?.play()
-    else audio_ref.current?.pause()
+    if (!audio_ref.current) return
+
+    if (music_on) {
+      audio_ref.current?.play()
+    } 
+    else {
+      audio_ref.current?.pause()
+    }
   }, [music_on])
 
   useEffect(() => {
@@ -125,13 +131,13 @@ export default function App() {
     door_sound.current?.play()
     
     setTimeout(() => {
-      setShowDoors(false)
+      audio_ref.current?.play()
     }, 1500)
 
     setTimeout(() => {
-      audio_ref.current?.play()
-
-    }, 1200)
+      setShowDoors(false)
+    }, 1500)
+    
   }
 
   const handleRSVP = async (e) => {
