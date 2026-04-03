@@ -1,3 +1,5 @@
+import { db } from "./firebase"
+import { collection, addDoc, getDocs } from "firebase/firestore"
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { TypeAnimation } from 'react-type-animation'
@@ -11,7 +13,9 @@ export default function App() {
   const [guests, setGuests] = useState([])
   const [loading, setLoading] = useState(true)
   const [success, setSuccess] = useState(false)
+  const [sending, setSending] = useState(false)
   const [show_doors, setShowDoors] = useState(true)
+  const [show_envelope, setShowEnvelope] = useState(true)
   const [fullscreen, setFullScreen] = useState(null)
   const audio_ref = useRef(null)
   const door_sound = useRef(null)
@@ -52,7 +56,7 @@ export default function App() {
 
     if (music_on) {
       audio_ref.current?.play()
-    } 
+    }
     else {
       audio_ref.current?.pause()
     }
@@ -66,6 +70,22 @@ export default function App() {
 
     return () => clearInterval(interval)
   }, [fullscreen])
+
+  useEffect(() => {
+    const fetch_guests = async () => {
+      const query_snapshot = await getDocs(collection(db, "guests"))
+      const data = query_snapshot.docs.map(doc => doc.data())
+      setGuests(data)
+    }
+
+    fetch_guests()
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const name = params.get("name")
+    if (name) setGuestName(name)
+  }, [])
 
   useEffect(() => {
     if (!opened) return
@@ -129,19 +149,22 @@ export default function App() {
     setOpened(true)
 
     door_sound.current?.play()
-    
+
     setTimeout(() => {
+      setShowEnvelope(false)
       audio_ref.current?.play()
-    }, 1500)
+    }, 2500)
 
     setTimeout(() => {
       setShowDoors(false)
     }, 1500)
-    
+
   }
 
   const handleRSVP = async (e) => {
     e.preventDefault();
+
+    setSending(true)
 
     const TOKEN = import.meta.env.VITE_TG_TOKEN
     const CHAT_ID = import.meta.env.VITE_CHAT_ID
@@ -164,6 +187,13 @@ export default function App() {
         })
       })
 
+      await addDoc(collection(db, "guests"), {
+        name: guest_name,
+        email: guest_email,
+        attendance: attendance,
+        created_at: new Date()
+      })
+
       setGuests([...guests, {
         name: guest_name,
         email: guest_email,
@@ -175,20 +205,55 @@ export default function App() {
       setAttendance("Приду")
 
       setSuccess(true)
+      setSending(false)
 
     } catch (error) {
       alert("Ошибка отправки 😢");
+      setSending(false)
     }
   };
 
   return (
     <div className="bg-black text-white overflow-hidden font-serif">
       {loading && (
-        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-          <div className="text-white text-2xl animate-pulse">
-            Loading wedding...
+        <div className="fixed inset-0 bg-black flex flex-col justify-center items-center gap-6 z-50">
+
+          <div className="relative w-24 h-24">
+            <motion.div
+              animate={{ rotate: 360, 
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ 
+                rotate: {repeat: Infinity, duration: 6, ease: "linear" },
+                scale: { repeat: Infinity, duration: 2}
+              }}
+              className="absolute w-16 h-16 border-4 border-yellow-400 rounded-full left-0 top-2 shadow-[0_0_20px_rgba(255,215,0,0.7)]"
+            />
+
+            <motion.div
+              animate={{ 
+                rotate: -360,
+                scale: [1, 1.1, 1] 
+              }}
+              transition={{ 
+                rotate: { repeat: Infinity, duration: 6, ease: "linear"},
+                scale: { repeat: Infinity, duration: 2, delay: 0.5 } 
+              }}
+              className="absolute w-16 h-16 border-4 border-pink-400 rounded-full right-0 top-2 shadow-[0_0_20px_rgba(255,105,180,0.7)]"
+            />
           </div>
+
+          <div className="text-white text-xl">
+            Подготавливаем вашу сказку 💍
+          </div>
+
         </div>
+
+        // <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+        //   <div className="text-white text-2xl animate-pulse">
+        //     Loading wedding...
+        //   </div>
+        // </div>
       )}
 
       <audio ref={door_sound} src='/door.mp3'></audio>
@@ -198,51 +263,103 @@ export default function App() {
 
       {opened && <canvas ref={canvas_ref} className='fixed top-0 left-0 w-full h-full pointer-events-none z-0' />}
 
-      {!opened && (
+      {show_envelope && (
+
         <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-pink-400 to-purple-700 text-center text-white">
-          <motion.h1
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className='text-5xl mb-6'
-          >
-            Приглашение на свадьбу
-          </motion.h1>
-          <motion.button
-            onClick={handleOpen}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className='w-full max-w-xs mx-auto text-2xl md:text-3xl border animate-pulse border-white px-8 py-3 rounded-full hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] hover:bg-white hover:text-pink-500 active:scale-90 transition-all duration-300 ease-in-out cursor-pointer'
-          >
-            Открыть
-          </motion.button>
+
+          <div className="relative cursor-pointer" style = {{perspective: "1200px" }} onClick={handleOpen}>
+
+            <div className="w-72 h-44 relative">
+            
+              <div className="absolute inset-0 bg-white rounded-lg shadow-2xl z-0" />
+
+             <motion.div 
+             initial={{ y: 40, opacity: 0}}
+             animate={{ y: opened ? -100 : 40, opacity: opened ? 1 : 0 }}
+             transition={{ duration: 1, ease: "easeInOut" }}
+             className="absolute left-4 right-4 h-32 bg-white rounded shadow-xl z-10 flex flex-col items-center justify-center text-black font-semibold p-4"
+             >
+              <div className="text-lg">💍 Приглашение</div>
+              <div className="text-lg mt-2 text-gray-500">
+                Нажмите, чтобы открыть
+                </div> 
+             </motion.div>
+
+              <motion.div
+              initial={{ rotateX: 0 }}
+              animate={{rotateX: opened ? -180 : 0 }}
+              transition={{ duration: 1.2, ease: "easeInOut" }}
+              className="absolute top-0 left-0 w-full h-1/2 bg-pink-400 origin-top z-20"
+              style={{ 
+                transformOrigin: "top",
+                backfaceVisibility: "hidden" 
+              }}
+              />
+            
+              <motion.div 
+              initial={{ rotateX: 0 }}
+              animate={{ rotateX: opened ? -180 : 0 }}
+              transition={{ duration: 1.2, ease: "easeInOut" }}
+              className="absolute top-0 left-0 w-full h-1/2 z-20"
+              style={{ 
+                clipPath: "polygon(0 0, 50% 100%, 100% 0)",
+                background: "#ec4899",
+                transformOrigin: "top",
+                backfaceVisibility: "hidden"
+               }}
+               />
+          </div>
+
+          </div>
+
+          <div className="mt-6 text-2xl opacity-100 animate-pulse">
+            Нажмите на конверт ✨
+          </div>
+
         </div>
       )}
 
+           {/* <motion.h1
+             initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className='text-5xl mb-6'
+            >
+             Приглашение на свадьбу
+           </motion.h1>
+          <motion.button
+             onClick={handleOpen}
+            whileHover={{ scale: 1.1 }}
+             whileTap={{ scale: 0.9 }}
+             className='w-full max-w-xs mx-auto text-2xl md:text-3xl border animate-pulse border-white px-8 py-3 rounded-full hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] hover:bg-white hover:text-pink-500 active:scale-90 transition-all duration-300 ease-in-out cursor-pointer'
+           >
+            Открыть
+         </motion.button> */}
+
       {opened && (
         <>
-        {show_doors && (
-          <div className='fixed inset-0 z-[999] flex'>
+          {show_doors && (
+            <div className='fixed inset-0 z-[999] flex'>
 
-            <div className='absolute inset-0 flex items-center justify-center'>
-              <motion.div initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }} 
-              transition={{ duration: 2 }}
-              className='w-full h-full bg-gradient-to-r from-pink-500 via-purple-500 to-yellow-400 blur-3xl opacity-70'/>
+              <div className='absolute inset-0 flex items-center justify-center'>
+                <motion.div initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 2 }}
+                  className='w-full h-full bg-gradient-to-r from-pink-500 via-purple-500 to-yellow-400 blur-3xl opacity-70' />
+              </div>
+
+              <motion.div initial={{ x: 0 }}
+                animate={{ x: "-100%" }}
+                transition={{ duration: 1.5, ease: "easeInOut" }}
+                className='w-1/2 h-full bg-gradient-to-r from-black to-gray-800'
+              />
+
+              <motion.div initial={{ x: 0 }}
+                animate={{ x: "100%" }}
+                transition={{ duration: 1.5, ease: "easeInOut" }}
+                className='w-1/2 h-full bg-gradient-to-r from-black to-gray-800'
+              />
             </div>
-
-            <motion.div initial={{ x: 0 }}
-             animate={{ x: "-100%" }}
-             transition={{ duration: 1.5, ease: "easeInOut" }}
-             className='w-1/2 h-full bg-gradient-to-r from-black to-gray-800'
-             />
-
-             <motion.div initial={{ x: 0 }}
-             animate={{ x: "100%" }}
-             transition={{ duration: 1.5, ease: "easeInOut" }}
-             className='w-1/2 h-full bg-gradient-to-r from-black to-gray-800'
-             />
-          </div>
-        )}
+          )}
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -262,11 +379,35 @@ export default function App() {
               >
                 Амир & Камилла
               </motion.h1>
+              {guest_name && (
+                <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1 }}
+                className="mb-4"
+                >
+
+                  <div className="text-4xl text-gray-300">Специально для вас</div>
+
+                  <TypeAnimation 
+                  sequence={[
+                    `💌 Дорогой(ая), ${guest_name}`,
+                    2000,
+                    `💌 ${guest_name}, вы приглашены на самое важное событие`,
+                    2000,
+                  ]}
+                  speed={50}
+                  className="text-lg mb-2 text-pink-300 font-semibold"
+                  repeat={0}/>
+                </motion.div>
+                
+              )}
               <TypeAnimation
                 sequence={[
                   "Мы нашли друг друга...",
                   2000,
                   "И хотим разделить этот прекрасный день с вами",
+                  4000,
                 ]}
                 speed={50}
                 className='block mt-4 text-lg text-white'
@@ -282,6 +423,7 @@ export default function App() {
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className='py-20 px-6 text-center'>
             <h2 className='text-3xl mb-6 text-yellow-400'>Наша история</h2>
@@ -298,6 +440,7 @@ export default function App() {
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className='py-20 text-center'
           >
@@ -329,15 +472,19 @@ export default function App() {
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className="py-20 text-center">
             <h2 className="text-3xl mb-10 text-yellow-400">Наши моменты</h2>
 
             <div className="relative w-full max-w-xl mx-auto">
               <motion.img
+                loading="lazy"
                 key={current}
                 src={images[current]}
                 onClick={() => setFullScreen(true)}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="w-full h-80 object-cover rounded-2xl cursor-pointer"
@@ -362,6 +509,7 @@ export default function App() {
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className='py-20 text-center'>
             <h2 className='text-3xl text-yellow-400 mb-6'>
@@ -377,6 +525,7 @@ export default function App() {
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className='py-20 px-6 text-center bg-gradient-to-b from-pink-400 to-purple-600 text-white'>
             <h2 className='text-3xl mb-6'>Приглашаем вас</h2>
@@ -394,9 +543,11 @@ export default function App() {
                 <option>Приду</option>
                 <option>Не смогу</option>
               </select>
-              <button type='submit'
-                className='w-full max-w-xs mx-auto text-2xl md:text-2xl px-6 py-2 border-2 border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] rounded-full hover:bg-white active:scale-90 hover:text-pink-500 transition-all duration-300 ease-in-out cursor-pointer'
-              >Отправить</button>
+              <button 
+              type='submit'
+              disabled={sending}
+              className='w-full max-w-xs mx-auto text-2xl md:text-2xl px-6 py-2 border-2 border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.6)] rounded-full hover:bg-white active:scale-90 hover:text-pink-500 transition-all duration-300 ease-in-out cursor-pointer'
+              >{sending ? "⏳ Отправка..." : "Отправить"}</button>
               {success && (
                 <div className='mt-4 text-green-300'>
                   Спасибо! Мы получили ваш ответ ❤️
@@ -417,6 +568,7 @@ export default function App() {
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className='max-w-5xl mx-auto overflow-hidden rounded-3xl shadow-2xl py-20 text-center'>
             <h2 className='text-3xl text-yellow-400 mb-6'>Наше место</h2>
@@ -434,6 +586,7 @@ export default function App() {
 
           <motion.section initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className='py-20 text-center bg-black text-white'>
             <h2 className='text-3xl text-yellow-400 mb-6'>Дресс-код</h2>
@@ -451,6 +604,7 @@ export default function App() {
           <motion.section
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 1 }}
             className='h-screen flex items-center justify-center text-center'>
             <motion.h2
